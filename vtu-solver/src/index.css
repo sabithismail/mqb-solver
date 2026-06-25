@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { -webkit-tap-highlight-color: transparent; }
+
+body { background-color: #0B1220; color: #F5F0E6; font-family: 'Inter', sans-serif; }
+
+::selection { background: #D4AF37; color: #0B1220; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #0B1220; }
+::-webkit-scrollbar-thumb { background: #1B2A4A; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #243556; }
+
+input, select, textarea {
+  font-family: 'Inter', sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
