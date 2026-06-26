@@ -22,9 +22,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing required fields.' })
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
-    return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in Vercel environment variables.' })
+    return res.status(500).json({ error: 'GEMINI_API_KEY not set in Vercel environment variables.' })
   }
 
   const topics = getModTopics(courseName)
@@ -39,27 +39,25 @@ Return ONLY valid JSON, no markdown, no explanation:
 {"moduleTitle":"Module ${modNum + 1} — ${t}","qsets":[{"label":"Q${q1} — Main","questions":[{"id":"Q${q1}a","text":"[real 8M VTU question on ${t}]","marks":"8M","answer":[{"type":"section","title":"Concept","content":""},{"type":"text","text":"explanation"},{"type":"math","text":"key formula = derivation"},{"type":"result","text":"✓ Final answer"}]},{"id":"Q${q1}b","text":"[another 8M question]","marks":"8M","answer":[{"type":"list","items":["Point 1","Point 2","Point 3","Point 4"]}]}]},{"label":"Q${q2} — Alternate (OR)","questions":[{"id":"Q${q2}a","text":"[alternate 8M question]","marks":"8M","answer":[{"type":"section","title":"Solution","content":""},{"type":"math","text":"working steps"},{"type":"result","text":"✓ Answer"}]},{"id":"Q${q2}b","text":"[4M numerical]","marks":"4M","answer":[{"type":"math","text":"given + calculation"},{"type":"result","text":"✓ Answer"}]}]}]}`
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1500,
-        system: 'You are a VTU exam solver. Return ONLY valid JSON — no markdown, no text before or after the JSON object.',
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2048 },
+        }),
+      }
+    )
 
     const data = await response.json()
+
     if (!response.ok || data.error) {
-      return res.status(500).json({ error: data.error?.message || 'Anthropic API error' })
+      return res.status(500).json({ error: data.error?.message || 'Gemini API error' })
     }
 
-    const text = data.content?.find(b => b.type === 'text')?.text || ''
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
     return res.status(200).json({ text })
 
   } catch (err) {
