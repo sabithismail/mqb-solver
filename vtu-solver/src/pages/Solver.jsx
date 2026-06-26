@@ -3,7 +3,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import QCard from '../components/QCard'
 import { BRANCHES, EXAM_TYPES, getModuleTopics, parseJSON } from '../lib/utils'
 
-// ─── Input Phase ──────────────────────────────────────────────────────────────
+function Toast({ msg, onClose }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+      style={{
+        position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+        background: '#7f1d1d', color: '#fecaca', borderRadius: 10,
+        padding: '12px 20px', fontSize: '0.88rem', fontFamily: 'JetBrains Mono, monospace',
+        zIndex: 999, maxWidth: 420, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+        display: 'flex', alignItems: 'center', gap: 12,
+      }}
+    >
+      <span>⚠ {msg}</span>
+      <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer', fontSize: 16 }}>✕</button>
+    </motion.div>
+  )
+}
 
 function InputPhase({ onGenerate }) {
   const [branch, setBranch] = useState('AIML')
@@ -18,13 +34,10 @@ function InputPhase({ onGenerate }) {
     const el = cardRef.current
     if (!el) return
     const r = el.getBoundingClientRect()
-    const x = (e.clientX - r.left) / r.width - 0.5
-    const y = (e.clientY - r.top) / r.height - 0.5
-    setTilt({ rotateX: y * -11, rotateY: x * 11 })
-  }
-
-  function handleMouseLeave() {
-    setTilt({ rotateX: 0, rotateY: 0 })
+    setTilt({
+      rotateX: ((e.clientY - r.top) / r.height - 0.5) * -11,
+      rotateY: ((e.clientX - r.left) / r.width - 0.5) * 11,
+    })
   }
 
   function submit() {
@@ -33,14 +46,16 @@ function InputPhase({ onGenerate }) {
       return
     }
     setError('')
-    onGenerate({ branch, courseName: courseName.trim(), courseCode: courseCode.trim().toUpperCase(), examType })
+    onGenerate({
+      branch,
+      courseName: courseName.trim(),
+      courseCode: courseCode.trim().toUpperCase(),
+      examType,
+    })
   }
 
-  const inputCls = `w-full bg-white/5 border border-gold/20 rounded-lg px-3.5 py-2.5
-    text-cream text-sm outline-none transition-colors duration-200
-    focus:border-gold/60 placeholder-slate-500`
-
-  const labelCls = 'block font-mono text-[10px] tracking-[0.18em] text-gold/70 mb-1.5 uppercase'
+  const inp = `w-full bg-white/5 border border-gold/20 rounded-lg px-3.5 py-2.5 text-cream text-sm outline-none transition-colors duration-200 focus:border-gold/60 placeholder-slate-500`
+  const lbl = `block font-mono text-[10px] tracking-[0.18em] text-gold/70 mb-1.5 uppercase`
 
   return (
     <div className="min-h-screen bg-navy flex flex-col items-center justify-center px-6 py-12">
@@ -65,64 +80,68 @@ function InputPhase({ onGenerate }) {
         Enter your course — get a fully solved paper, module by module.
       </motion.p>
 
-      {/* 3D tilt card */}
       <motion.div
         ref={cardRef}
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-        onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setTilt({ rotateX: 0, rotateY: 0 })}
         style={{
-          rotateX: tilt.rotateX, rotateY: tilt.rotateY,
-          transformStyle: 'preserve-3d', perspective: 900,
-          transition: 'transform 0.08s linear',
-          width: '100%', maxWidth: 420,
+          rotateX: tilt.rotateX,
+          rotateY: tilt.rotateY,
+          transformStyle: 'preserve-3d',
+          perspective: 900,
+          width: '100%',
+          maxWidth: 420,
         }}
       >
         <div
-          className="bg-navy-card border border-gold/20 rounded-2xl p-8 w-full"
+          className="bg-navy-card border border-gold/20 rounded-2xl p-8 w-full relative"
           style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.55)' }}
         >
-          {/* Stack effect layers */}
           <div className="absolute inset-0 translate-x-2 translate-y-2 bg-navy-light/30 -z-10 rounded-2xl" />
-          <div className="absolute inset-0 translate-x-4 translate-y-4 bg-navy-light/15 -z-20 rounded-2xl" />
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <div>
-              <label className={labelCls}>Branch</label>
+              <label className={lbl}>Branch</label>
               <select value={branch} onChange={e => setBranch(e.target.value)}
-                className={inputCls} style={{ cursor: 'pointer' }}>
-                {BRANCHES.map(b => <option key={b} value={b} style={{ background: '#1B2A4A' }}>{b}</option>)}
+                className={inp} style={{ cursor: 'pointer' }}>
+                {BRANCHES.map(b => (
+                  <option key={b} value={b} style={{ background: '#1B2A4A' }}>{b}</option>
+                ))}
               </select>
             </div>
             <div>
-              <label className={labelCls}>Exam Type</label>
+              <label className={lbl}>Exam Type</label>
               <select value={examType} onChange={e => setExamType(e.target.value)}
-                className={inputCls} style={{ cursor: 'pointer' }}>
-                {EXAM_TYPES.map(t => <option key={t} value={t} style={{ background: '#1B2A4A' }}>{t}</option>)}
+                className={inp} style={{ cursor: 'pointer' }}>
+                {EXAM_TYPES.map(t => (
+                  <option key={t} value={t} style={{ background: '#1B2A4A' }}>{t}</option>
+                ))}
               </select>
             </div>
           </div>
 
           <div className="mb-3">
-            <label className={labelCls}>Course Name</label>
+            <label className={lbl}>Course Name</label>
             <input
               type="text"
               placeholder="e.g. Quantum Physics and Applications"
               value={courseName}
               onChange={e => setCourseName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submit()}
-              className={inputCls}
+              className={inp}
             />
           </div>
 
           <div className="mb-5">
-            <label className={labelCls}>Course Code</label>
+            <label className={lbl}>Course Code</label>
             <input
               type="text"
               placeholder="e.g. 1BPHYS102"
               value={courseCode}
               onChange={e => setCourseCode(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submit()}
-              className={`${inputCls} font-mono`}
+              className={`${inp} font-mono`}
             />
           </div>
 
@@ -130,8 +149,7 @@ function InputPhase({ onGenerate }) {
 
           <button
             onClick={submit}
-            className="w-full bg-gold text-navy font-semibold rounded-lg py-3 text-sm
-              hover:bg-gold/90 active:scale-[0.98] transition-all duration-150 tracking-wide"
+            className="w-full bg-gold text-navy font-semibold rounded-lg py-3 text-sm hover:bg-gold/90 active:scale-[0.98] transition-all duration-150 tracking-wide"
           >
             Generate Solved Paper →
           </button>
@@ -148,59 +166,47 @@ function InputPhase({ onGenerate }) {
   )
 }
 
-// ─── Paper Phase ──────────────────────────────────────────────────────────────
-
-function ModuleContent({ meta, modNum, data, onRetry }) {
+function ModuleContent({ modNum, data, onRetry }) {
   if (!data) return (
-    <div className="flex items-center justify-center py-20">
-      <p className="font-mono text-sm tracking-[0.15em] text-[#0d1b2a] animate-pulse">
+    <div className="flex flex-col items-center justify-center py-24 gap-4">
+      <motion.div
+        animate={{ opacity: [0.4, 1, 0.4] }}
+        transition={{ repeat: Infinity, duration: 1.4 }}
+        style={{ fontFamily: 'JetBrains Mono, monospace', color: '#0d1b2a', fontSize: '0.82rem', letterSpacing: '0.15em' }}
+      >
         GENERATING MODULE {modNum + 1}…
-      </p>
+      </motion.div>
+      <p style={{ fontSize: '0.78rem', color: '#94A3B8' }}>Usually takes 5–10 seconds</p>
     </div>
   )
 
   if (data.error) return (
     <div className="max-w-3xl mx-auto px-5 py-8">
-      <div style={{
-        background: '#fff0f0', border: '1px solid #fcc',
-        borderRadius: 8, padding: 16, color: '#c00', fontSize: '0.87rem',
-      }}>
-        {data.error}
-        <button onClick={onRetry} style={{
-          marginLeft: 10, background: '#0d1b2a', color: '#f5c842',
-          border: 'none', borderRadius: 4, padding: '4px 12px', cursor: 'pointer',
-        }}>Retry</button>
+      <div style={{ background: '#fff0f0', border: '1px solid #fcc', borderRadius: 8, padding: 20, color: '#c00', fontSize: '0.87rem' }}>
+        <strong>Error:</strong> {data.error}
+        <button onClick={onRetry} style={{ marginLeft: 12, background: '#0d1b2a', color: '#f5c842', border: 'none', borderRadius: 4, padding: '4px 12px', cursor: 'pointer', fontSize: '0.8rem' }}>
+          Retry
+        </button>
       </div>
     </div>
   )
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="max-w-3xl mx-auto px-5 py-6"
-    >
-      <div style={{
-        fontSize: '1.05rem', fontWeight: 700, color: '#0d1b2a',
-        borderLeft: '4px solid #f5c842', paddingLeft: 12, marginBottom: 22,
-        fontFamily: "'Spectral', serif",
-      }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto px-5 py-6">
+      <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0d1b2a', borderLeft: '4px solid #f5c842', paddingLeft: 12, marginBottom: 22, fontFamily: "'Spectral', serif" }}>
         {data.moduleTitle || `Module ${modNum + 1}`}
       </div>
 
       {(data.qsets || []).map((qs, qi) => (
         <div key={qi} style={{ marginBottom: 28 }}>
-          <p style={{
-            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1.5px',
-            textTransform: 'uppercase', color: '#888', marginBottom: 10,
-          }}>{qs.label}</p>
-
+          <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: '#888', marginBottom: 10 }}>
+            {qs.label}
+          </p>
           {(qs.questions || []).map(q => <QCard key={q.id} q={q} />)}
-
           {qi < (data.qsets.length - 1) && (
-            <div style={{
-              textAlign: 'center', color: '#bbb', fontSize: '0.78rem',
-              fontWeight: 700, margin: '18px 0', letterSpacing: '2px',
-            }}>— OR —</div>
+            <div style={{ textAlign: 'center', color: '#bbb', fontSize: '0.78rem', fontWeight: 700, margin: '18px 0', letterSpacing: '2px' }}>
+              — OR —
+            </div>
           )}
         </div>
       ))}
@@ -208,17 +214,21 @@ function ModuleContent({ meta, modNum, data, onRetry }) {
   )
 }
 
-// ─── Main Export ──────────────────────────────────────────────────────────────
-
 export default function Solver() {
   const [phase, setPhase] = useState('input')
   const [meta, setMeta] = useState(null)
   const [modules, setModules] = useState({})
   const [activeMod, setActiveMod] = useState(0)
+  const [toast, setToast] = useState(null)
+
+  function showToast(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 6000)
+  }
 
   async function loadModule(modNum, m) {
     if (modules[modNum] && !modules[modNum].error) return
-    setModules(prev => ({ ...prev, [modNum]: null })) // null = loading
+    setModules(prev => ({ ...prev, [modNum]: null }))
 
     try {
       const res = await fetch('/api/generate', {
@@ -229,18 +239,22 @@ export default function Solver() {
 
       const json = await res.json()
 
-      if (json.error) {
-        setModules(prev => ({ ...prev, [modNum]: { error: json.error } }))
+      if (!res.ok || json.error) {
+        const msg = json.error || `Server error ${res.status}`
+        showToast(msg)
+        setModules(prev => ({ ...prev, [modNum]: { error: msg } }))
         return
       }
 
       const parsed = parseJSON(json.text)
       setModules(prev => ({
         ...prev,
-        [modNum]: parsed || { error: 'Could not parse response. Please retry.' },
+        [modNum]: parsed || { error: 'Could not parse AI response. Retry.' },
       }))
     } catch (err) {
-      setModules(prev => ({ ...prev, [modNum]: { error: err.message || 'Network error.' } }))
+      const msg = `Network error: ${err.message}`
+      showToast(msg)
+      setModules(prev => ({ ...prev, [modNum]: { error: msg } }))
     }
   }
 
@@ -258,20 +272,21 @@ export default function Solver() {
   }
 
   function handleRetry(i) {
-    if (!meta) return
     setModules(prev => { const n = { ...prev }; delete n[i]; return n })
-    loadModule(i, meta)
+    if (meta) loadModule(i, meta)
   }
 
-  if (phase === 'input') return <InputPhase onGenerate={handleGenerate} />
+  if (phase === 'input') return (
+    <>
+      <InputPhase onGenerate={handleGenerate} />
+      <AnimatePresence>{toast && <Toast msg={toast} onClose={() => setToast(null)} />}</AnimatePresence>
+    </>
+  )
 
   const topics = getModuleTopics(meta.courseName)
-  const modData = modules[activeMod]
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f4f0', fontFamily: "'Inter', sans-serif" }}>
-
-      {/* Header */}
       <div style={{ background: '#0d1b2a', color: '#f5c842', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 style={{ fontFamily: "'Spectral', serif", fontSize: '1.05rem', fontWeight: 700, margin: 0 }}>
@@ -283,46 +298,31 @@ export default function Solver() {
         </div>
         <button
           onClick={() => setPhase('input')}
-          style={{
-            background: 'none', border: '1px solid rgba(212,175,55,0.35)',
-            color: '#f5c842', borderRadius: 6, padding: '5px 12px',
-            cursor: 'pointer', fontSize: '0.75rem',
-            fontFamily: "'JetBrains Mono', monospace",
-          }}
+          style={{ background: 'none', border: '1px solid rgba(212,175,55,0.35)', color: '#f5c842', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: '0.75rem', fontFamily: "'JetBrains Mono', monospace" }}
         >
           ← New
         </button>
       </div>
 
-      {/* Module nav */}
       <div style={{ background: '#162032', display: 'flex', gap: 4, padding: '8px 16px', flexWrap: 'wrap' }}>
         {[0, 1, 2, 3, 4].map(i => (
           <button key={i} onClick={() => handleModClick(i)} style={{
             background: activeMod === i ? '#f5c842' : 'transparent',
-            border: '1px solid', borderColor: activeMod === i ? '#f5c842' : '#2a3a50',
+            border: '1px solid',
+            borderColor: activeMod === i ? '#f5c842' : '#2a3a50',
             color: activeMod === i ? '#0d1b2a' : '#8aaed4',
             padding: '5px 13px', borderRadius: 6, cursor: 'pointer',
-            fontSize: '0.78rem', fontWeight: activeMod === i ? 700 : 400,
-            transition: 'all 0.15s',
+            fontSize: '0.78rem', fontWeight: activeMod === i ? 700 : 400, transition: 'all 0.15s',
           }}>
             Mod {i + 1} — {topics[i].split(' ')[0]}
-            {modules[i] && !modules[i]?.error && ' ✓'}
+            {modules[i] && !modules[i]?.error ? ' ✓' : ''}
           </button>
         ))}
       </div>
 
-      <ModuleContent
-        meta={meta}
-        modNum={activeMod}
-        data={modData}
-        onRetry={() => handleRetry(activeMod)}
-      />
+      <ModuleContent modNum={activeMod} data={modules[activeMod]} onRetry={() => handleRetry(activeMod)} />
 
-      <footer style={{ maxWidth: 780, margin: '0 auto', padding: '0 20px 20px', borderTop: '0.5px solid #ddd', marginTop: 8 }}>
-        <p style={{ fontSize: '0.72rem', color: '#aaa', paddingTop: 12, fontFamily: "'JetBrains Mono', monospace" }}>
-          Built by Sabith · Yenepoya Institute of Technology · VTU 2025–26
-        </p>
-      </footer>
+      <AnimatePresence>{toast && <Toast msg={toast} onClose={() => setToast(null)} />}</AnimatePresence>
     </div>
   )
 }
