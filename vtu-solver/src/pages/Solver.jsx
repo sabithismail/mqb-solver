@@ -96,7 +96,7 @@ function InputPhase({ onGenerate }) {
       >
         <div
           className="bg-navy-card border border-gold/20 rounded-2xl p-8 w-full relative"
-          style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.55)' }}
+          style={{ boxShadow: '0 32px 64px rgba(0,0,0,0.55)', position: 'relative', zIndex: 1 }}
         >
           <div className="absolute inset-0 translate-x-2 translate-y-2 bg-navy-light/30 -z-10 rounded-2xl" />
 
